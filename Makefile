@@ -4,7 +4,7 @@ pkgs   = $(shell $(GO) list ./... | grep -v /vendor/)
 
 PREFIX                  ?= $(shell pwd)
 BIN_DIR                 ?= $(shell pwd)
-DOCKER_IMAGE_NAME       ?= kafka-exporter
+DOCKER_IMAGE_NAME       ?= ghcr.io/mr-yum/kafka-exporter
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 TAG 					:= $(shell echo `if [ "$(TRAVIS_BRANCH)" = "master" ] || [ "$(TRAVIS_BRANCH)" = "" ] ; then echo "latest"; else echo $(TRAVIS_BRANCH) ; fi`)
 
@@ -45,13 +45,12 @@ tarball: promu
 
 docker: build
 	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" --build-arg BIN_DIR=. .
+	@docker build -t "$(DOCKER_IMAGE_NAME):latest" --build-arg BIN_DIR=. .
 
 push: crossbuild
-	@echo ">> building and pushing multi-arch docker images, $(DOCKER_USERNAME),$(DOCKER_IMAGE_NAME),$(TAG)"
-	@docker login -u $(DOCKER_USERNAME) -p $(DOCKER_PASSWORD)
+	@echo ">> building and pushing multi-arch docker images, mr-yum,$(DOCKER_IMAGE_NAME),latest"
 	@docker buildx create --use
-	@docker buildx build -t "$(DOCKER_USERNAME)/$(DOCKER_IMAGE_NAME):$(TAG)" \
+	@docker buildx build -t "$(DOCKER_IMAGE_NAME):latest" \
 		--output "$(PUSHTAG)" \
 		--platform "$(DOCKER_PLATFORMS)" \
 		.
