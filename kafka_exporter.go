@@ -54,7 +54,9 @@ var (
 	consumergroupLag                   *prometheus.Desc
 	consumergroupLagSum                *prometheus.Desc
 	consumergroupLagZookeeper          *prometheus.Desc
-	consumergroupMembers               *prometheus.Desc
+	// TODO(adrian.arumugam): Hack to patch kafka_exporter to make it reliable ASAP while
+	// a better upstream patch is figured out.
+	//consumergroupMembers               *prometheus.Desc
 )
 
 // Exporter collects Kafka stats from the given server and exports them using
@@ -573,9 +575,11 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 					}
 				}
 			}
-			ch <- prometheus.MustNewConstMetric(
-				consumergroupMembers, prometheus.GaugeValue, float64(len(group.Members)), group.GroupId,
-			)
+			// TODO(adrian.arumugam): Hack to patch kafka_exporter to make it reliable ASAP while
+			// a better upstream patch is figured out.
+			//ch <- prometheus.MustNewConstMetric(
+			//	consumergroupMembers, prometheus.GaugeValue, float64(len(group.Members)), group.GroupId,
+			//)
 			offsetFetchResponse, err := broker.FetchOffset(&offsetFetchRequest)
 			if err != nil {
 				glog.Errorf("Cannot get offset of group %s: %v", group.GroupId, err)
@@ -855,11 +859,13 @@ func setup(
 		[]string{"consumergroup", "topic"}, labels,
 	)
 
-	consumergroupMembers = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "consumergroup", "members"),
-		"Amount of members in a consumer group",
-		[]string{"consumergroup"}, labels,
-	)
+	// TODO(adrian.arumugam): Hack to patch kafka_exporter to make it reliable ASAP while
+	// a better upstream patch is figured out.
+	// consumergroupMembers = prometheus.NewDesc(
+	//	prometheus.BuildFQName(namespace, "consumergroup", "members"),
+	//	"Amount of members in a consumer group",
+	//	[]string{"consumergroup"}, labels,
+	// )
 
 	if logSarama {
 		sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
