@@ -4,12 +4,12 @@ pkgs   = $(shell $(GO) list ./... | grep -v /vendor/)
 
 PREFIX                  ?= $(shell pwd)
 BIN_DIR                 ?= $(shell pwd)
-DOCKER_IMAGE_NAME       ?= ghcr.io/mr-yum/kafka-exporter
-DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
+GHCR_IMAGE_NAME         ?= ghcr.io/mr-yum/kafka-exporter
+GHCR_IMAGE_TAG          ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD | md5sum | cut -d " " -f1))
 TAG 					:= $(shell echo `if [ "$(TRAVIS_BRANCH)" = "master" ] || [ "$(TRAVIS_BRANCH)" = "" ] ; then echo "latest"; else echo $(TRAVIS_BRANCH) ; fi`)
 
 PUSHTAG                 ?= type=registry,push=true
-DOCKER_PLATFORMS        ?= linux/amd64,linux/s390x,linux/arm64,linux/ppc64le
+PLATFORMS        ?= linux/amd64,linux/s390x,linux/arm64,linux/ppc64le
 
 all: format build test
 
@@ -45,14 +45,20 @@ tarball: promu
 
 docker: build
 	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):latest" --build-arg BIN_DIR=. .
+	@docker build -t "$(GHCR_IMAGE_NAME):$(GHCR_IMAGE_TAG)" --build-arg BIN_DIR=. .
 
+
+# Before running this make sure you have a Github Container Registry Personal Access Token (CR_PAT) exported 
+# locally which at a minimum has RW packages permissions and have logged into ghcr.io via docker login.
+# https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry
 push: crossbuild
-	@echo ">> building and pushing multi-arch docker images, mr-yum,$(DOCKER_IMAGE_NAME),latest"
+	@echo ">> building and pushing multi-arch docker images, mr-yum,$(GHCR_IMAGE_NAME):$(GHCR_IMAGE_TAG),latest"
 	@docker buildx create --use
-	@docker buildx build -t "$(DOCKER_IMAGE_NAME):latest" \
+	@docker buildx build \
+	    --tag "$(GHCR_IMAGE_NAME):$(GHCR_IMAGE_TAG)" \
+	    --tag "$(GHCR_IMAGE_NAME):latest" \
 		--output "$(PUSHTAG)" \
-		--platform "$(DOCKER_PLATFORMS)" \
+		--platform "$(PLATFORMS)" \
 		.
 
 release: promu github-release
