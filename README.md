@@ -1,9 +1,12 @@
 kafka_exporter
 ==============
 
-[![Build Status](https://app.travis-ci.com/danielqsj/kafka_exporter.svg?branch=master)](https://app.travis-ci.com/danielqsj/kafka_exporter)[![Docker Pulls](https://img.shields.io/docker/pulls/danielqsj/kafka-exporter.svg)](https://hub.docker.com/r/danielqsj/kafka-exporter)[![Go Report Card](https://goreportcard.com/badge/github.com/danielqsj/kafka_exporter)](https://goreportcard.com/report/github.com/danielqsj/kafka_exporter)[![Language](https://img.shields.io/badge/language-Go-red.svg)](https://github.com/danielqsj/kafka-exporter)[![GitHub release](https://img.shields.io/badge/release-1.4.2-green.svg)](https://github.com/alibaba/derrick/releases)[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+Kafka exporter for Prometheus - patched by Mr Yum Eng.
 
-Kafka exporter for Prometheus. For other metrics from Kafka, have a look at the [JMX exporter](https://github.com/prometheus/jmx_exporter).
+Mr Yum forked and patched this exporter to temporarily overcome an issue with the consumergroupMembers metric which was intermittently causing the kafka_exporter
+to fail metric exports.
+
+This repository will only temporarily exist while we work on a more robust patch and submit that upstream to `danielqsj/kafka_exporter`.
 
 Table of Contents
 -----------------
@@ -12,8 +15,10 @@ Table of Contents
 -	[Dependency](#dependency)
 -	[Download](#download)
 -	[Compile](#compile)
-	-	[Build Binary](#build-binary)
-	-	[Build Docker Image](#build-docker-image)
+	-	[Build Binary](#build-binary-for-testing-locally)
+	-	[Build Docker Image](#build-docker-image-for-testing-locally)
+	-   [Build & Push Multi-Arch Docker Image to ghcr.io](#build-docker-image-and-push-to-github-container-registry)
+-   [Github Container Registry Image](#github-container-registry-image)
 -	[Run](#run)
 	-	[Run Binary](#run-binary)
 	-	[Run Docker Image](#run-docker-image)
@@ -40,34 +45,55 @@ Dependency
 -	[Sarama](https://shopify.github.io/sarama)
 -	[Golang](https://golang.org)
 
-Download
---------
-
-Binary can be downloaded from [Releases](https://github.com/danielqsj/kafka_exporter/releases) page.
-
 Compile
 -------
 
-### Build Binary
+### Build Binary - for testing locally
 
 ```shell
 make
 ```
 
-### Build Docker Image
+### Build Docker Image - for testing locally
 
 ```shell
 make docker
 ```
+### Build Docker Image and push to Github Container Registry
 
-Docker Hub Image
+**As this is a temporary patch, only Mr Yum SRE team has permissions to upload new packages to ghcr.io for this particular container path.**
+
+>**NOTE:** If you haven't set up a personal access token with read/write permissions for
+Github packages then please follow the instructions [here](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry)
+before moving on.
+
+1. Export your CR_PAT (Github Container Registry Personal Access Token) and login via docker.
+
+```shell
+export CR_PAT="replace-with-your-cr-pat"
+export GH_USERNAME="replace-with-your-github-username"                                                                                                                                                             
+echo ${CR_PAT?} | docker login ghcr.io -u ${GH_USERNAME?} --password-stdin 
+ ```
+
+2. Once you've received the 'Login Succeeded' message you can run the multi-arch build. This will
+   build various target_arch containers and push them to ghcr.io.
+
+```shell
+make push
+```
+
+>**NOTE:**: This will push to `ghcr.io/mr-yum/kafka-exporter` and assign two tags.
+The first tag will be the versioning tag which is a md5 hash of the build branch (`ghcr.io/mr-yum/kafka-exporter:$md5sum`).
+The second tag with be the latest tag (`ghcr.io/mr-yum/kafka-exporter:latest`).
+
+Github Container Registry Image
 ----------------
 
 ```shell
-docker pull danielqsj/kafka-exporter:latest
+docker pull ghcr.io/mr-yum/kafka-exporter:latest
 ```
 
-It can be used directly instead of having to build the image yourself. ([Docker Hub danielqsj/kafka-exporter](https://hub.docker.com/r/danielqsj/kafka-exporter)\)
+It can be used directly instead of having to build the image yourself. ([ghcr.io/mr-yum/kafka-exporter](https://github.com/orgs/mr-yum/packages/container/package/kafka-exporter))
 
 Run
 ---
